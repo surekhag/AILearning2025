@@ -1,56 +1,62 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import API_KEY from "../Config/config";
 
-const TextToImage = ({
+const TextToImageModel = ({
   apiUrl = "http://localhost:3001/api/write",
   placeholder = "Enter text...",
 }) => {
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState(null);
+  const [resultUrl, setResultUrl] = useState(null);
   const [error, setError] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setResult(null);
+    setResultUrl(null);
     setError(null);
 
-    const API_KEY = "INSERT_YOUR_HUGGING_FACE_API_KEY_HERE";
     try {
-      const endpoint = "https://router.huggingface.co/nebius/v1/images/generations"
+      const endpoint =
+        "https://router.huggingface.co/nebius/v1/images/generations";
 
       const resp = await fetch(endpoint, {
+        response_format: "b64_json",
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${API_KEY}`,
         },
-        body: JSON.stringify(JSON.stringify(text)),
+        body: JSON.stringify({
+          model: "black-forest-labs/flux-dev",
+          response_format: "b64_json",
+          prompt: text,
+        }),
       });
 
       if (!resp.ok) {
-        const text = await resp.blob();
+        const text = await resp.text();
+        console.log("data from eror", text);
         throw new Error(`HTTP ${resp.status}: ${text}`);
       }
 
-      const data = await resp.blob();
-      console.log("data from HF", data);
-      // Handle common HF response shapes
-      if (typeof data === "string") {
-        setResult(data);
-        // return data;
-      } else if (Array.isArray(data) && data[0]?.generated_text) {
-        // return data[0].generated_text;
-        setResult(data[0].generated_text);
-      } else if (data.generated_text) {
-        // return data.generated_text;
-        setResult(data.generated_text);
-      } else {
-        setResult(data.choices[0].message.content);
-        // setResult(JSON.stringify(data.choices[0].message.content, null, 2));
-        // return JSON.stringify(data.choices[0].message.content, null, 2);
+      //  // Parse JSON and extract base64 image
+      const data = await resp.json();
+      // console.log("API response:", data && data[0], data && data[0].b64_json); // <-- Add this line
+      console.log("API response:", data, data && data.data[0]); // <-- Add this line
+
+      const base64Image =
+        (data && data?.data[0]?.generated_image_b64) ||
+        (data && data?.data[0]?.images?.[0]?.b64_json) ||
+        (data && data?.data[0]?.b64_json) ||
+        (data && data?.data[0]?.image); // Add more keys if needed
+      console.log("Extracted base64Image:", base64Image); // <-- Add this line
+      if (!base64Image) {
+        throw new Error("No image found in response");
       }
+      const imageUrl = `data:image/png;base64,${base64Image}`;
+      setResultUrl(imageUrl);
     } catch (err) {
       // throw err;
       setError(err.message || "An error occurred");
@@ -65,7 +71,7 @@ const TextToImage = ({
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label htmlFor="textInput" className="form-label">
-              Input Text
+              Text to Image Model
             </label>
             <input
               id="textInput"
@@ -86,17 +92,15 @@ const TextToImage = ({
             >
               {loading ? "Sending..." : "Submit"}
             </button>
-            {result && <span className="text-success">Success</span>}
+            {resultUrl && <span className="text-success">Success</span>}
             {error && <span className="text-danger">Error</span>}
           </div>
         </form>
 
-        {result && (
+        {resultUrl && (
           <div className="mt-3">
             <h6>Response:</h6>
-            <pre style={{ whiteSpace: "pre-wrap" }}>
-              {JSON.stringify(result, null, 2)}
-            </pre>
+            <img src={resultUrl} alt="Generated" style={{ maxWidth: "100%" }} />
           </div>
         )}
 
@@ -110,4 +114,4 @@ const TextToImage = ({
   );
 };
 
-export default TextToImage;
+export default TextToImageModel;

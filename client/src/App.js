@@ -1,12 +1,22 @@
 import React from "react";
-import CityCapital from "./CityCapital";
-import TextToImage from "./TextTOImage";
+import { Tab, Tabs, TabList } from "react-tabs";
+import "react-tabs/style/react-tabs.css";
+import CityCapital from "./components/CityCapital";
+import TextToImageModel from "./components/TextToImageModel";
 
 const App = () => (
-  <div>
-    <CityCapital />
-    <TextToImage />
-  </div>
+  <Tabs>
+    <TabList>
+      <Tab>
+        <h3>City Capital</h3>
+        <CityCapital />
+      </Tab>
+      <Tab>
+        <h3>Text to Image Model</h3>
+        <TextToImageModel />
+      </Tab>
+    </TabList>
+  </Tabs>
 );
 
 export default App;

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
+import API_KEY from "../Config/config";
 
 const CityCapital = ({
   apiUrl = "http://localhost:3001/api/write",
@@ -16,7 +17,6 @@ const CityCapital = ({
     setResult(null);
     setError(null);
 
-    const API_KEY = "INSERT_YOUR_HUGGING_FACE_API_KEY_HERE";
     try {
       const endpoint = "https://router.huggingface.co/v1/chat/completions";
 
